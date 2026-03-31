@@ -188,17 +188,21 @@ Restart confirmation (Click the restart confirmation button)"""
                 def whenClick(*args):
                     nonlocal counter
                     if args[-1] == False: # mouse up events only
-                        if counter+1 >= poscount:
-                            return False
                         print(*args)
                         poses.append([args[0], args[1]])
                         counter += 1
+                        
+                        if counter >= poscount:
+                            return False
+                        
                         print("Click location: ", list(poslist)[counter])
                         print(steps.split("\n")[counter])
                         
                     
                 with Listener(on_click=whenClick) as listener:
                     listener.join()
+                if len(poslist) != len(poses):
+                    raise Exception("mismatch in positions collected")
                 newposes = {name: coords for name, coords in zip(poslist, poses)}
                 f.write(json.dumps(newposes))
                 print("Calibration complete!")
