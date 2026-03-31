@@ -16,42 +16,18 @@ mouseDelay = 0
 
 
 
-hwnd = win32gui.FindWindow(None, "BloonsTD6")
 
-x0, y0, x1, y1 = win32gui.GetWindowRect(hwnd)
 
-def loadJson(name):
-    with open(f"{name}.json", "r") as f:
-        return json.loads(f.read())
-        
 
-def clicketyClack(name):
-    pos = posDict.get(name)
-    cx, cy = pos
-
-    tx = cx + x0
-    ty = cy + y0
-    pya.moveTo(tx, ty)
-    time.sleep(mouseDelay)
-    pya.click()
-
-def clickClack(key):
-    keyboard.press(key)
-    time.sleep(keyboardDelay)
-    keyboard.release(key)
-
-def checkPixel(pos, col):
-    cx, cy = pos
-    tx = cx + x0
-    ty = cy + y0
-    if pya.pixel(tx, ty) != col:
-        time.sleep(1)
-        return False
-    return True
     
 
 def main():
     global posDict, binds
+
+    def loadJson(name):
+        with open(f"{name}.json", "r") as f:
+            return json.loads(f.read())
+
     try:
         posDict = loadJson("pos")
     except:
@@ -60,10 +36,48 @@ def main():
         binds = loadJson("binds")
     except:
         raise Exception("binds json not found - try calibrating in settings")
-
+    
     # ensure window is focused
-    pya.getWindowsWithTitle("BloonsTD6")[0].activate() 
-    time.sleep(0.1)
+    windows = [w for w in pya.getAllWindows() if "Bloons" in w.title]
+    if not windows:
+        raise Exception("BloonsTD6 window not found. Make sure the game is running.")
+    else:
+        windows[0].activate()
+        time.sleep(0.1)
+
+
+    hwnd = win32gui.FindWindow(None, "BloonsTD6")
+
+    x0, y0, x1, y1 = win32gui.GetWindowRect(hwnd)
+
+            
+
+    def clicketyClack(name):
+        pos = posDict.get(name)
+        cx, cy = pos
+
+        tx = cx + x0
+        ty = cy + y0
+        pya.moveTo(tx, ty)
+        time.sleep(mouseDelay)
+        pya.click()
+
+    def clickClack(key):
+        keyboard.press(key)
+        time.sleep(keyboardDelay)
+        keyboard.release(key)
+
+    def checkPixel(pos, col):
+        cx, cy = pos
+        tx = cx + x0
+        ty = cy + y0
+        if pya.pixel(tx, ty) != col:
+            time.sleep(1)
+            return False
+        return True
+
+
+
 
 
     # get the levelup point's colour
