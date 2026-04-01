@@ -9,8 +9,11 @@ keyboard = Controller()
 
 
 # ---- settings ----
-keyboardDelay = 0.1
-mouseDelay = 0
+def loadSettings():
+    global settingsDict
+    with open("settings.json", "r") as settingsf:
+        settings = json.loads(settingsf.read())
+        settingsDict = settings
 
 
 
@@ -37,14 +40,7 @@ def main():
     except:
         raise Exception("binds json not found - try calibrating in settings")
     
-    # ensure window is focused
-    windows = [w for w in pya.getAllWindows() if "Bloons" in w.title]
-    if not windows:
-        raise Exception("BloonsTD6 window not found. Make sure the game is running.")
-    else:
-        windows[0].activate()
-        time.sleep(0.1)
-
+    
 
     hwnd = win32gui.FindWindow(None, "BloonsTD6")
 
@@ -59,12 +55,12 @@ def main():
         tx = cx + x0
         ty = cy + y0
         pya.moveTo(tx, ty)
-        time.sleep(mouseDelay)
+        time.sleep(settingsDict.get("mouseDelay"))
         pya.click()
 
     def clickClack(key):
         keyboard.press(key)
-        time.sleep(keyboardDelay)
+        time.sleep(settingsDict.get("keyboardDelay"))
         keyboard.release(key)
 
     def checkPixel(pos, col):
@@ -104,6 +100,7 @@ def main():
 
     # start game
     clickClack(Key.space)
+    time.sleep(0.5)
     clickClack(Key.space)
 
     while True:
@@ -120,17 +117,17 @@ def main():
         
             # win
             clicketyClack("winCheck") # next
-            time.sleep(1)
+            time.sleep(settingsDict.get("navSpeed"))
             clicketyClack("freeplay") # freeplay
 
             clickClack(Key.esc) # remove freeplay dialogue
-            time.sleep(0.5)
+            time.sleep(settingsDict.get("navSpeed"))
             clickClack(Key.esc) # pause
-            time.sleep(0.5)
+            time.sleep(settingsDict.get("navSpeed"))
             clicketyClack("restart") # restart
-            time.sleep(0.5)
+            time.sleep(settingsDict.get("navSpeed"))
             clicketyClack("restartConfirmation")
-            time.sleep(0.5)
+            time.sleep(settingsDict.get("navSpeed"))
             break
     
 
@@ -147,13 +144,28 @@ class terminal():
 
         choice = int(input(">"))
         funcs[choice-1]()
+    
+    def settingsChange():
+        settingsList = settingsDict.keys()
+        print("Which setting would you like to change?")
+        for i, setting in enumerate(settingsList):
+            print(i+1, " ", setting, ": ", settingsDict.get(setting))
+        choice = int(input())
+        settingToChange = list(settingsList)[choice-1]
+        with open("settings.json", "w") as f:
+            settingsDict.update({settingToChange: float(input("Enter new float in seconds: "))})
+            f.write(json.dumps(settingsDict))
 
 
 
 if __name__ == "__main__":
     Terminal = terminal()
+    loadSettings()
 
     def runMacro():
+        # ensure window is focused
+        print("you have 5 seconds to alt tab to btd6")
+        time.sleep(5)
         while True:
             main()
     
@@ -170,6 +182,12 @@ if __name__ == "__main__":
             with open("defaultpos.json", "r") as defaultp:
                 with open("pos.json", "w") as p:
                     p.write(defaultp.read())
+        
+        def adjustDelays():
+            print("If your computer is especially slow, you may need to slow down some of these (especially navSpeed)\nin order to not have the script fail and accidentally start playing freeplay")
+            terminal.settingsChange()
+            
+
 
         def calibratePositions():
             
@@ -225,7 +243,7 @@ Restart confirmation (Click the restart confirmation button)"""
                 print("run the script again to use the macro")
 
 
-        terminal.choice(resetBinds, resetPos, calibratePositions)
+        terminal.choice(resetBinds, resetPos, calibratePositions, adjustDelays)
     print("Welcome to my macro! it is recommended that you go into binds.json to adjust your keybinds \nso that the script does not press the wrong buttons")
     terminal.choice(runMacro, settings)
 
