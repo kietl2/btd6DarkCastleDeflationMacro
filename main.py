@@ -203,7 +203,7 @@ Restart confirmation (Click the restart confirmation button)"""
                 poses = []
                 def whenClick(*args):
                     nonlocal counter
-                    if args[-1] == False: # mouse up events only
+                    if args[3] == False: # mouse up events only
                         print(*args)
                         poses.append([args[0], args[1]])
                         counter += 1
