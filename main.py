@@ -8,12 +8,13 @@ from pynput.mouse import Listener
 keyboard = Controller()
 
 
-# ---- settings ----
-def loadSettings():
-    global settingsDict
+# ---- timings ----
+def loadTimings():
+    global timingsDict
     with open("settings.json", "r") as settingsf:
-        settings = json.loads(settingsf.read())
-        settingsDict = settings
+        settings = json.load(settingsf)
+        timings = settings.get("timings")
+        timingsDict = timings
 
 
 
@@ -27,16 +28,15 @@ def loadSettings():
 def main():
     global posDict, binds
 
-    def loadJson(name):
-        with open(f"{name}.json", "r") as f:
-            return json.loads(f.read())
+    with open(f"settings.json", "r") as f:
+        settingsDict = json.load(f)
 
     try:
-        posDict = loadJson("pos")
+        posDict = settingsDict.get("pos")
     except:
         raise Exception("position json not found - try calibrating in settings")
     try:
-        binds = loadJson("binds")
+        binds = settingsDict.get("binds")
     except:
         raise Exception("binds json not found - try calibrating in settings")
     
@@ -55,12 +55,12 @@ def main():
         tx = cx + x0
         ty = cy + y0
         pya.moveTo(tx, ty)
-        time.sleep(settingsDict.get("mouseDelay"))
+        time.sleep(timingsDict.get("mouseDelay"))
         pya.click()
 
     def clickClack(key):
         keyboard.press(key)
-        time.sleep(settingsDict.get("keyboardDelay"))
+        time.sleep(timingsDict.get("keyboardDelay"))
         keyboard.release(key)
 
     def checkPixel(pos, col):
@@ -100,7 +100,7 @@ def main():
 
     # start game
     clickClack(Key.space)
-    time.sleep(0.5)
+    time.sleep(timingsDict.get("navSpeed"))
     clickClack(Key.space)
 
     while True:
@@ -117,17 +117,17 @@ def main():
         
             # win
             clicketyClack("winCheck") # next
-            time.sleep(settingsDict.get("navSpeed"))
+            time.sleep(timingsDict.get("navSpeed"))
             clicketyClack("freeplay") # freeplay
 
             clickClack(Key.esc) # remove freeplay dialogue
-            time.sleep(settingsDict.get("navSpeed"))
+            time.sleep(timingsDict.get("navSpeed"))
             clickClack(Key.esc) # pause
-            time.sleep(settingsDict.get("navSpeed"))
+            time.sleep(timingsDict.get("navSpeed"))
             clicketyClack("restart") # restart
-            time.sleep(settingsDict.get("navSpeed"))
+            time.sleep(timingsDict.get("navSpeed"))
             clicketyClack("restartConfirmation")
-            time.sleep(settingsDict.get("navSpeed"))
+            time.sleep(timingsDict.get("navSpeed"))
             break
     
 
@@ -145,22 +145,25 @@ class terminal():
         choice = int(input(">"))
         funcs[choice-1]()
     
-    def settingsChange():
-        settingsList = settingsDict.keys()
+    def timingsChange():
+        timingsList = timingsDict.keys()
         print("Which setting would you like to change?")
-        for i, setting in enumerate(settingsList):
-            print(i+1, " ", setting, ": ", settingsDict.get(setting))
+        for i, setting in enumerate(timingsList):
+            print(i+1, " ", setting, ": ", timingsDict.get(setting))
         choice = int(input())
-        settingToChange = list(settingsList)[choice-1]
-        with open("settings.json", "w") as f:
-            settingsDict.update({settingToChange: float(input("Enter new float in seconds: "))})
-            f.write(json.dumps(settingsDict))
+        settingToChange = list(timingsList)[choice-1]
+        with open("settings.json", "r+") as settingsFile:
+            timingsDict.update({settingToChange: float(input("Enter new float in seconds: "))})
+            settingsDict = json.load(settingsFile)
+            settingsDict.get("timings").update(timingsDict)
+            settingsFile.seek(0)
+            json.dump(settingsDict, settingsFile, indent=4)
 
 
 
 if __name__ == "__main__":
     Terminal = terminal()
-    loadSettings()
+    loadTimings()
 
     def runMacro():
         # ensure window is focused
@@ -174,18 +177,28 @@ if __name__ == "__main__":
         def unsure(): exit()
         def resetBinds():
             terminal.choice(sure, unsure)
-            with open("defaults.json", "r") as defaultb:
-                with open("binds.json", "w") as b:
-                    b.write(defaultb.read().get("binds"))
+            with open("defaults.json", "r") as defaultb, open("settings.json", "r+") as b:
+                defaults = json.load(defaultb)
+                setdata = json.load(b)
+                setdata.setdefault("binds", {})
+                setdata["binds"].update(defaults.get("binds", {}))
+                b.seek(0)
+                json.dump(setdata, b, indent=4)
+                b.truncate()
         def resetPos():
             terminal.choice(sure, unsure)
-            with open("defaults.json", "r") as defaultp:
-                with open("pos.json", "w") as p:
-                    p.write(defaultp.read().get("pos"))
+            with open("defaults.json", "r") as defaultp, open("settings.json", "r+") as p:
+                defaults = json.load(defaultp)
+                setdata = json.load(p)
+                setdata.setdefault("pos", {})
+                setdata["pos"].update(defaults.get("pos", {}))
+                p.seek(0)
+                json.dump(setdata, p, indent=4)
+                p.truncate()
         
         def adjustDelays():
             print("If your computer is especially slow, you may need to slow down some of these (especially navSpeed)\nin order to not have the script fail and accidentally start playing freeplay")
-            terminal.settingsChange()
+            terminal.timingsChange()
             
 
 
@@ -214,7 +227,6 @@ Freeplay (click the freeplay button)
 Restart (press escape twice to first remove the freeplay dialogue and then pause it - Then click the restart button)
 Restart confirmation (Click the restart confirmation button)"""
                         
-                print(steps)
                 
                 print("Click location: ", list(poslist)[0])
                 print(steps.split("\n")[0])

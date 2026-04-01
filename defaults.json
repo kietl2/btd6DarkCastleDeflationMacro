@@ -1,4 +1,10 @@
 {
+    "timings": {
+        "keyboardDelay": 0.1,
+        "mouseDelay": 0,
+        "navSpeed": 1
+    },
+
     "pos":  {
         "cPlacement": [796, 426],
         "smPlacement": [935, 426],
@@ -9,7 +15,7 @@
         "restart": [1059, 851],
         "restartConfirmation": [1131, 721]
     },
-    
+
     "binds":    {
         "hero": "u",
         "super": "s",
