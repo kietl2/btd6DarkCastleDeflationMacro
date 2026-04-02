@@ -21,9 +21,23 @@ def loadTimings():
 
 
 
-
-
+def settingsGet(dic):
+    with open("settings.json", "r+") as f:
+        settingsDict = json.load(f)
+        return settingsDict.get(dic)
     
+def settingsSet(dic, dataDict, fullDict):
+    with open("settings.json", "r+") as settingsFile:
+        settingsDict = json.load(settingsFile)
+        if fullDict:
+            settingsDict.update(dataDict)
+        else:
+            specDict = settingsDict.get(dic, {})
+            specDict.update(dataDict)
+            settingsDict[dic] = specDict
+        settingsFile.seek(0)
+        json.dump(settingsDict, settingsFile, indent=4)
+        settingsFile.truncate()
 
 def main():
     global posDict, binds
@@ -155,16 +169,16 @@ class terminal():
             print(i+1, " ", setting, ": ", timingsDict.get(setting))
         choice = int(input())
         settingToChange = list(timingsList)[choice-1]
-        with open("settings.json", "r+") as settingsFile:
-            timingsDict.update({settingToChange: float(input("Enter new float in seconds: "))})
-            settingsDict = json.load(settingsFile)
-            settingsDict.get("timings").update(timingsDict)
-            settingsFile.seek(0)
-            json.dump(settingsDict, settingsFile, indent=4)
-
+        newData = {settingToChange: float(input("Enter new float in seconds: "))}
+        settingsSet("timings", newData, False)
 
 
 if __name__ == "__main__":
+    try:
+        with open("settings.json", "x") as s, open("defaults.json", "r") as d:
+            s.write(d.read())
+    except:
+        pass
     Terminal = terminal()
     loadTimings()
 
@@ -206,56 +220,42 @@ if __name__ == "__main__":
 
 
         def calibratePositions():
-            
-            with open("defaultpos.json", "r") as defp:
-                data = json.loads(defp.read())
-                poscount = len(list(data.keys()))
+            with open("defaults.json", "r") as defaults:
+                fulldata = json.load(defaults)
+                posDict = fulldata.get("pos")
+                poscount = len(list(posDict.keys()))
                 print(poscount)
                 counter = 0
-
-                poslist = data.keys()
+                poslist = posDict.keys()
                 
-            
-            with open("pos.json", "w") as f:
-                print("""INFO:
-For the duration of calibration ensure your game is on you primary monitor (you can move the window after)
-To move the btd6 window you can press Windows + Shift + Left or right arrow keys
-The steps in order are:""")
-                steps = """Churchill placement (click somewhere that churchill fits)
-Super Monkey placement (click somewhere that supermonkey fits)
-Super Monkey upgrade (click on the super monkey so that you can upgrade it to 0/2/3 - then play (speed up) and DO NOT CLICK ANYWHERE until you win)
-Levelup (Click somewhere on the map that is not changing colour - this is used to see if the screen changes colour (you level up) and will then click off it automatically)
-Win check (after winning click somewhere on the white part of the next button (this is used to check when you have won))
-Freeplay (click the freeplay button)
-Restart (press escape twice to first remove the freeplay dialogue and then pause it - Then click the restart button)
-Restart confirmation (Click the restart confirmation button)"""
-                        
+            with open("dialogue.json", "r") as dialogueFile:
+                dialogueDict = json.load(dialogueFile)
+                print("\n".join(x for x in dialogueDict.get("info"))) 
+                steps = dialogueDict.get("steps")
+                print(steps[0])
                 
-                print("Click location: ", list(poslist)[0])
-                print(steps.split("\n")[0])
-                poses = []
-                def whenClick(*args):
-                    nonlocal counter
-                    if args[3] == False: # mouse up events only
-                        print(*args)
-                        poses.append([args[0], args[1]])
-                        counter += 1
-                        
-                        if counter >= poscount:
-                            return False
-                        
-                        print("Click location: ", list(poslist)[counter])
-                        print(steps.split("\n")[counter])
-                        
+            poses = []
+            def whenClick(*args):
+                nonlocal counter
+                if args[3] == False: # mouse up events only
+                    poses.append([args[0], args[1]])
+                    counter += 1
                     
-                with Listener(on_click=whenClick) as listener:
-                    listener.join()
-                if len(poslist) != len(poses):
-                    raise Exception("mismatch in positions collected")
-                newposes = {name: coords for name, coords in zip(poslist, poses)}
-                f.write(json.dumps(newposes))
-                print("Calibration complete!")
-                print("run the script again to use the macro")
+                    if counter >= poscount:
+                        return False
+                    
+                    print(steps[counter])
+                    
+                
+            with Listener(on_click=whenClick) as listener:
+                listener.join()
+            if len(poslist) != len(poses):
+                raise Exception("mismatch in positions collected")
+            newposes = {name: coords for name, coords in zip(poslist, poses)}
+                
+            settingsSet("pos", newposes, True)
+            print("Calibration complete!")
+            print("run the script again to use the macro")
 
 
         terminal.choice(resetBinds, resetPos, calibratePositions, adjustDelays)
