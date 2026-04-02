@@ -22,7 +22,7 @@ def loadTimings():
 
 
 def settingsGet(dic):
-    with open("settings.json", "r+") as f:
+    with open("settings.json", "r") as f:
         settingsDict = json.load(f)
         return settingsDict.get(dic)
     
@@ -224,7 +224,6 @@ if __name__ == "__main__":
                 fulldata = json.load(defaults)
                 posDict = fulldata.get("pos")
                 poscount = len(list(posDict.keys()))
-                print(poscount)
                 counter = 0
                 poslist = posDict.keys()
                 
@@ -253,7 +252,7 @@ if __name__ == "__main__":
                 raise Exception("mismatch in positions collected")
             newposes = {name: coords for name, coords in zip(poslist, poses)}
                 
-            settingsSet("pos", newposes, True)
+            settingsSet("pos", newposes, False)
             print("Calibration complete!")
             print("run the script again to use the macro")
 
