@@ -1,5 +1,6 @@
 import pyautogui as pya
-from pynput.keyboard import Key, Controller
+from pynput.keyboard import Key, Controller, Listener as kbListener
+from pynput.mouse import Listener as mListener
 import json
 import time
 import win32gui
@@ -126,6 +127,17 @@ class Setupper:
         for towerDict in towerDicts:
             self.placeTower(towerDict)
 
+    def whenClick(self, *args):
+        if args[-2] == False:
+            self.inputProcessor((args[0], args[1]))
+    def whenPress(self, *args):
+        self.inputProcessor(args[0])
+
+    def inputProcessor(self, inp):
+        print(inp)
+
+
+
     def appendSetup(self):
         newMap = TerminalAlt.pickAString(["new", "current"], "Would you like to enter a new map or use an existing one")
         if newMap == "current":
@@ -149,7 +161,18 @@ class Setupper:
         print("3: click somewhere then press the upgrade binds")
         print("After each step, press enter")
         print("When you are done, press enter twice in a row")
-
+        print("When you have your map open on deflation, press enter to begin")
+        mouse_listener = mListener(on_click=self.whenClick)
+        keyboard_listener = kbListener(on_release=self.whenPress)
+        mouse_listener.start()
+        keyboard_listener.start()
+        mouse_listener.join()
+        keyboard_listener.join()
+        time.sleep(100)
+        while True:
+            print("no more ear")
+            time.sleep(5)
+            pass
         self.chosenMapDict.update({setupName: newSetup})
         self.setupsDict.update(self.chosenMapDict)
         self.saveSetups()
