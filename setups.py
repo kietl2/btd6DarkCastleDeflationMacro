@@ -5,6 +5,7 @@ import json
 import time
 import win32gui
 
+
 keyboard = Controller()
 
 class TerminalAlt:
