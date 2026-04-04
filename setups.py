@@ -27,8 +27,7 @@ class Setupper:
             self.setupsDict = json.load(setupsJson)
 
         hwnd = win32gui.FindWindow(None, "BloonsTD6")
-        # x0, y0, x1, y1 = win32gui.GetWindowRect(hwnd)
-        x0, y0 = (0, 0)
+        x0, y0, x1, y1 = win32gui.GetWindowRect(hwnd)
         self.winx = x0
         self.winy = y0
 
@@ -42,7 +41,7 @@ class Setupper:
         self.upgradeBinds = [bindsDict.get(key) for key in bindsDict.keys()]
 
         self.recording = False
-        self.stopRecording = True
+        self.finishedRecording = False
 
     def mClick(self, coords):
         cx, cy = coords
@@ -82,7 +81,7 @@ class Setupper:
 
         return processedArguments
     
-    def placeSetup(self):
+    def prepareSetup(self):
         # select map
         self.chosenMapDict = self.setupsDict.get(self.chooseMap())
         # select setup from map
@@ -90,9 +89,8 @@ class Setupper:
         
         # parse setup text
         self.instructions = self.parseSetup(self.chosenSetup)
-        
-        print("you have 5 seconds to enter btd6")
-        time.sleep(5)
+    
+    def placeSetup(self):
 
         # place each tower
         for instruction in self.instructions:
@@ -109,43 +107,62 @@ class Setupper:
                 self.kbPress(fancyKeys.get(instruction, instruction))
 
 
-    def whenClick(self, *args):
-        if not self.stopRecording:
-            return False
-        if args[-2] == False:
-            self.inputProcessor((args[0], args[1]))
+    def whenClick(self, x, y, mouseButton, pressRelease):
+        if pressRelease == False:
+            self.inputProcessor((x, y))
             
-    def whenPress(self, *args):
-        if not self.stopRecording:
-            return False
-        self.inputProcessor(args[0])
+    def whenPress(self, keyPressed):
+        self.inputProcessor(keyPressed)
+
 
     def inputProcessor(self, inp):
-        if inp == Key.enter:
-            if self.recording:
-                self.stopRecording = False
+        inp_str = str(inp).strip("'")
+        # Handle Enter key
+        if inp_str == "Key.enter":
+            if self.finishedRecording:
+                return  # completely ignore future enters
+
+            if not self.recording:
+                self.recording = True
+                return
+            else:
+                if self.upgrading:
+                    self.upgrading = False
+                    self.newSetup.append("".join(str(x) for x in self.activeUpgrades))
+                    self.activeUpgrades = [0, 0, 0]
+
+                self.recording = False
+                self.finishedRecording = True
                 self.mouse_listener.stop()
                 self.keyboard_listener.stop()
-            self.recording = True
-            pass
-        if self.recording:
-            if inp.__class__ == tuple:
-                self.newSetup.append("-".join(str(inpp) for inpp in inp))
-            else:
-                inp = str(inp).strip("'")
-                if inp in self.upgradeBinds:
-                    if not self.upgrading:
-                        self.upgrading = True
-                    self.activeUpgrades[self.upgradeBinds.index(inp)] += 1
-                else:
-                    if self.upgrading:
-                        self.upgrading = False
-                        self.newSetup.append("".join(str(x) for x in self.activeUpgrades))
-                        self.activeUpgrades = [0, 0, 0]
-                    
-                    if inp == str(Key.enter).strip("'"):
-                        return
-                    self.newSetup.append(inp)
+                return
+
+        if not self.recording:
+            return
+
+        # Handle tuple input
+        if isinstance(inp, tuple):
+            self.newSetup.append("-".join(str(x) for x in inp))
+            return
+
+        # Handle upgrades
+        if inp_str in self.upgradeBinds:
+            if not self.upgrading:
+                self.upgrading = True
+            idx = self.upgradeBinds.index(inp_str)
+            self.activeUpgrades[idx] += 1
+            return
+
+        if self.upgrading:
+            self.upgrading = False
+            self.newSetup.append("".join(str(x) for x in self.activeUpgrades))
+            self.activeUpgrades = [0, 0, 0]
+
+        # Ignore Enter in recording stream
+        if inp_str == "Key.enter":
+            return
+
+        self.newSetup.append(inp_str)
 
     def appendSetup(self):
         newMap = TerminalAlt.pickAString(["new", "current"], "Would you like to enter a new map or use an existing one")
@@ -167,6 +184,7 @@ class Setupper:
         print("while recording only your key presses and mouse clicks are recorded")
         print("this means you must know the hotkeys to place your chosen towers and also the upgrade buttons")
         print("(defaults are ',' '.' and '/')")
+        time.sleep(1)
         print("")
         print("you may now tab in and press enter to begin")
         # listeners start and will stop themselves when you press enter twice
@@ -176,9 +194,9 @@ class Setupper:
         self.keyboard_listener.join()
 
 
-        mapDict = {}
-        mapDict.update({setupName: "_".join(self.newSetup)})
-        self.setupsDict.update({mapName: mapDict})
+        mapDict = self.setupsDict.get(mapName, {})
+        mapDict[setupName] = "_".join(self.newSetup)
+        self.setupsDict[mapName] = mapDict
         
         with open("setups.json", "w") as f:
             json.dump(self.setupsDict, f, indent=4)
@@ -186,9 +204,10 @@ class Setupper:
 
 if __name__ == "__main__":
     setupper = Setupper()
+    setupper.appendSetup()
+    """
+    setupper.prepareSetup()
     setupper.placeSetup()
+    """
 
 
-
-# TODO:
-#   upgrades need to be changed from ._._/_/_/ to 023

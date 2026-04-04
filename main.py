@@ -175,15 +175,17 @@ if __name__ == "__main__":
             s.write(d.read())
     except:
         pass
+    setupper = setups.Setupper()
     Terminal = terminal()
     loadTimings()
 
     def runMacro():
-        global setupper
-        setupper = setups.Setupper()
+        setupper.prepareSetup()
+        print("you have 5 seconds to enter btd6")
+        time.sleep(5)
         while True:
             main()
-    
+     
     def settings():
         def sure(): pass
         def unsure(): exit()
@@ -211,6 +213,9 @@ if __name__ == "__main__":
         def adjustDelays():
             print("If your computer is especially slow, you may need to slow down some of these (especially navSpeed)\nin order to not have the script fail and accidentally start playing freeplay")
             terminal.timingsChange()
+
+        def addSetup():
+            setupper.appendSetup()
             
 
 
@@ -252,7 +257,7 @@ if __name__ == "__main__":
             print("run the script again to use the macro")
 
 
-        terminal.choice(resetBinds, resetPos, calibratePositions, adjustDelays)
+        terminal.choice(resetBinds, resetPos, calibratePositions, adjustDelays, addSetup)
     print("Welcome to my macro! it is recommended that you go into binds.json to adjust your keybinds \nso that the script does not press the wrong buttons")
     terminal.choice(runMacro, settings)
 
