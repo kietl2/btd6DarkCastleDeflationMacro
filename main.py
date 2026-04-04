@@ -112,7 +112,7 @@ def main():
         # if level up click off (check not just the win screen)
         if not checkPixel(posDict.get("levelup"), levelupcol):
             time.sleep(1)
-            if not (checkPixel(posDict.get("winCheck"), (255, 255, 255)) and checkPixel(posDict.get("loseCheck"), (255, 255, 255))):
+            if not (checkPixel(posDict.get("winCheck"), (255, 255, 255)) or checkPixel(posDict.get("loseCheck"), (255, 255, 255))):
                 clicketyClack("levelup")
                 time.sleep(0.5)
                 clicketyClack("levelup")
