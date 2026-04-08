@@ -6,7 +6,7 @@
     },
 
     "pos":  {
-        "levelup": [1915, 20],
+        "levelup": [1900, 50],
         "winCheck": [933, 907],
         "freeplay": [1176, 849],
         "restart": [1059, 851],
