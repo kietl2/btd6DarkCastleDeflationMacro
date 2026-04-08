@@ -6,21 +6,17 @@
     },
 
     "pos":  {
-        "cPlacement": [796, 426],
-        "smPlacement": [935, 426],
-        "smUpgrade": [935, 426],
-        "levelup": [1915, 20],
+        "levelup": [1900, 50],
         "winCheck": [933, 907],
         "freeplay": [1176, 849],
         "restart": [1059, 851],
-        "restartConfirmation": [1131, 721]
+        "restartConfirmation": [1131, 721],
+        "loseCheck": [934, 794]
     },
 
     "binds":    {
-        "hero": "u",
-        "super": "s",
-        "up0" : ",",
-        "up1" : ".",
-        "up2" : "/"
+        "up0": ",",
+        "up1": ".",
+        "up2": "/"
     }
 }

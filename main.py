@@ -5,6 +5,8 @@ import json
 from pynput.keyboard import Key, Controller
 from pynput.mouse import Listener
 
+import setups
+
 keyboard = Controller()
 
 
@@ -99,21 +101,7 @@ def main():
     ty = cy + y0
     levelupcol = pya.pixel(tx, ty)
 
-    # place churchill
-    clickClack(binds.get("hero"))
-    clicketyClack("cPlacement")
-
-    # place super monkey
-    clickClack(binds.get("super"))
-    clicketyClack("smPlacement")
-    
-    # upgrade 0/2/3
-    clicketyClack("smPlacement")
-    clickClack(binds.get("up1"))
-    clickClack(binds.get("up1"))
-    clickClack(binds.get("up2"))
-    clickClack(binds.get("up2"))
-    clickClack(binds.get("up2"))
+    setupper.placeSetup()
 
     # start game
     clickClack(Key.space)
@@ -124,7 +112,7 @@ def main():
         # if level up click off (check not just the win screen)
         if not checkPixel(posDict.get("levelup"), levelupcol):
             time.sleep(1)
-            if not checkPixel(posDict.get("winCheck"), (255, 255, 255)):
+            if not (checkPixel(posDict.get("winCheck"), (255, 255, 255)) or checkPixel(posDict.get("loseCheck"), (255, 255, 255))):
                 clicketyClack("levelup")
                 time.sleep(0.5)
                 clicketyClack("levelup")
@@ -142,6 +130,14 @@ def main():
             clickClack(Key.esc) # pause
             time.sleep(navSpeed)
             clicketyClack("restart") # restart
+            time.sleep(navSpeed)
+            clicketyClack("restartConfirmation")
+            time.sleep(navSpeed)
+            break
+
+        # if lose
+        if checkPixel(posDict.get("loseCheck"), (255, 255, 255)):
+            clicketyClack("loseCheck")
             time.sleep(navSpeed)
             clicketyClack("restartConfirmation")
             time.sleep(navSpeed)
@@ -179,16 +175,17 @@ if __name__ == "__main__":
             s.write(d.read())
     except:
         pass
+    setupper = setups.Setupper()
     Terminal = terminal()
     loadTimings()
 
     def runMacro():
-        # ensure window is focused
-        print("you have 5 seconds to alt tab to btd6")
+        setupper.prepareSetup()
+        print("you have 5 seconds to enter btd6")
         time.sleep(5)
         while True:
             main()
-    
+     
     def settings():
         def sure(): pass
         def unsure(): exit()
@@ -216,6 +213,9 @@ if __name__ == "__main__":
         def adjustDelays():
             print("If your computer is especially slow, you may need to slow down some of these (especially navSpeed)\nin order to not have the script fail and accidentally start playing freeplay")
             terminal.timingsChange()
+
+        def addSetup():
+            setupper.appendSetup()
             
 
 
@@ -257,7 +257,7 @@ if __name__ == "__main__":
             print("run the script again to use the macro")
 
 
-        terminal.choice(resetBinds, resetPos, calibratePositions, adjustDelays)
+        terminal.choice(resetBinds, resetPos, calibratePositions, adjustDelays, addSetup)
     print("Welcome to my macro! it is recommended that you go into binds.json to adjust your keybinds \nso that the script does not press the wrong buttons")
     terminal.choice(runMacro, settings)
 
